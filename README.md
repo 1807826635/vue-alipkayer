@@ -3,7 +3,7 @@
 
 
 #基本用法
-import alipkayer from '@/components/frontZone/alipkayer'
+import alipkayer from 'alipkayer'
   components: {
     alipkayer
   }
