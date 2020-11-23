@@ -1,6 +1,5 @@
 <template>
   <div id='videomonitoring'>
-    <script type="text/javascript" charset="utf-8" src="https://g.alicdn.com/de/prismplayer/2.9.1/aliplayer-min.js"></script>
     <div>
       <div class='box-card'>
         <div style='height:560px'>
@@ -11,7 +10,7 @@
   </div>
 </template>
 <script>
-/* eslint-disable */
+  /* eslint-disable */
   export default {
     // 在vue中怎么使用Aliplayer
     name: 'Aliplayer',
@@ -20,11 +19,11 @@
         type: String,
         default: ''
       },
-      // aliplayerSdkPath: {
-      //   // Aliplayer 代码的路径
-      //   type: String,
-      //   default: 'https://g.alicdn.com/de/prismplayer/2.9.1/aliplayer-min.js'
-      // },
+      aliplayerSdkPath: {
+        // Aliplayer 代码的路径
+        type: String,
+        default: 'https://g.alicdn.com/de/prismplayer/2.9.1/aliplayer-min.js'
+      },
       autoplay: {
         type: Boolean,
         default: true
@@ -126,20 +125,24 @@
 
     },
     mounted () {
-      this.checked()
+      this.insertScriptTag().then(()=>{
+        this.checked()
+      })
     },
     methods: {
       checked(){
         if (window.Aliplayer === undefined) {
-          if(this.tiems === 5){
+          if(this.tiems === 10){
             return false
           }
           this.sleep(1000).then(()=>{
             this.tiems += 1
-            this.checked()
+            this.insertScriptTag()
           })
         }else{
-          this.initAliplayer()
+          this.$nextTick(()=>{
+            this.initAliplayer()
+          })
         }
       },
       sleep(tiem){
@@ -148,6 +151,22 @@
             resolve();
           }, tiem);
         })
+      },
+      insertScriptTag () {
+        return new Promise((resolve, reject) => {
+          let playerScriptTag = document.getElementById('playerScriptTag')
+          // 如果这个tag不存在，则生成相关代码tag以加载代码
+          if (playerScriptTag === null) {
+            playerScriptTag = document.createElement('script')
+            playerScriptTag.type = 'text/javascript'
+            playerScriptTag.src = this.aliplayerSdkPath
+            playerScriptTag.id = 'playerScriptTag'
+            let s = document.getElementById('videomonitoring')
+            s.appendChild(playerScriptTag)
+            resolve()
+          }
+        })
+
       },
       initAliplayer () {
         const _this = this
@@ -393,12 +412,10 @@
       }
     },
     beforeDestroy(){
-      console.log('销毁')
-      this.instance.shows=true
       if (this.instance) {
-        this.instance && this.instance.dispose()
+        console.log('销毁')
+        this.instance.dispose()
       }
-      this.instance.shows=false
     },
     watch: {
       source: {
@@ -406,7 +423,10 @@
         handler (newVal, oldVal) {
           if (!this.source) {
             return false
-          } else{
+          } else if(!oldVal){
+            this.source = newVal
+            this.initAliplayer()
+          }else{
             this.disposePlayer()
             this.source = newVal
             this.initAliplayer()
